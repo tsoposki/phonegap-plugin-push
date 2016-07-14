@@ -14,7 +14,7 @@ self.addEventListener('push', function(event) {
 
     // Need to figure out a way to make these configurable
     var title = 'Title';
-    var body = 'Message';
+    var body = event.data.text();
     var icon = 'https://avatars1.githubusercontent.com/u/60365?v=3&s=200';
     var tag = 'simple-push-demo-notification-tag';
 
@@ -28,7 +28,7 @@ self.addEventListener('push', function(event) {
 
     var pushData = {
         title: 'Title',
-        message: 'Message',
+        message: event.data.text(),
         count: 1,
         sound: 'default',
         additionalData: {}

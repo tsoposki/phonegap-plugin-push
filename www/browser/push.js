@@ -56,12 +56,30 @@ var PushNotification = function(options) {
         })
         .then(function(reg) {
             console.log('Service Worker is ready: ');
-            console.log(reg);
             reg.pushManager.subscribe({userVisibleOnly: true}).then(function(sub) {
-                console.log('endpoint: ');
                 console.log(sub.endpoint);
                 result = { 'registrationId': sub.endpoint.substring(sub.endpoint.lastIndexOf('/') + 1) };
                 that.emit('registration', result);
+
+                // send encryption keys to push server
+                console.log('*** sending XHR');
+                var xmlHttp = new XMLHttpRequest();
+                xmlHttp.open('POST', 'http://localhost:3001/keys', true);
+
+                xmlHttp.onreadystatechange = function() {
+                    if (xmlHttp.readyState === 4 && xmlHttp.status === 200) {
+                        console.log('*** xmlHttp send ok');
+                    } else {
+                        console.log('*** xmlHttp send bad');
+                        console.log(xmlHttp.responseText);
+                    }
+                };
+
+                var formData = new FormData();
+                formData.append('subscription', JSON.stringify(sub));
+
+                xmlHttp.send(formData);
+
                 navigator.serviceWorker.controller.postMessage(result, [channel.port2]);
             }).catch(function(error) {
                 console.log('*** subscription error');
