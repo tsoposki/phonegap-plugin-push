@@ -12,9 +12,15 @@ self.addEventListener('activate', function(event) {
 self.addEventListener('push', function(event) {
     console.log('Push message received', event);
 
+    // parse incoming message
+    var obj = {};
+    if (event.data) {
+        obj = event.data.json();
+    }
+
     // Need to figure out a way to make these configurable
-    var title = 'Title';
-    var body = event.data.text();
+    var title = obj.title || 'Default title';
+    var body = obj.body || 'This is the default body';
     var icon = 'https://avatars1.githubusercontent.com/u/60365?v=3&s=200';
     var tag = 'simple-push-demo-notification-tag';
 
@@ -27,8 +33,8 @@ self.addEventListener('push', function(event) {
     );
 
     var pushData = {
-        title: 'Title',
-        message: event.data.text(),
+        title: title,
+        message: body,
         count: 1,
         sound: 'default',
         additionalData: {}

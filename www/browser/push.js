@@ -64,7 +64,8 @@ var PushNotification = function(options) {
                 // send encryption keys to push server
                 console.log('*** sending XHR');
                 var xmlHttp = new XMLHttpRequest();
-                xmlHttp.open('POST', 'http://localhost:3001/keys', true);
+                var xmlURL = options.browser.pushServiceURL || 'http://push.api.phongeap.com/v1/push/keys';
+                xmlHttp.open('POST', xmlURL, true);
 
                 xmlHttp.onreadystatechange = function() {
                     if (xmlHttp.readyState === 4 && xmlHttp.status === 200) {
