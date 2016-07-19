@@ -13,7 +13,7 @@ var exec = cordova.require('cordova/exec');
  * @param {Object} options to initiate Push Notifications.
  * @return {PushNotification} instance that can be monitored and cancelled.
  */
-
+var serviceWorker, subscription;
 var PushNotification = function(options) {
     this._handlers = {
         'registration': [],
@@ -56,8 +56,10 @@ var PushNotification = function(options) {
         })
         .then(function(reg) {
             console.log('Service Worker is ready: ');
+            serviceWorker = reg;
             reg.pushManager.subscribe({userVisibleOnly: true}).then(function(sub) {
                 console.log(sub.endpoint);
+                subscription = sub;
                 result = { 'registrationId': sub.endpoint.substring(sub.endpoint.lastIndexOf('/') + 1) };
                 that.emit('registration', result);
 
@@ -113,18 +115,39 @@ PushNotification.prototype.unregister = function(successCallback, errorCallback,
     }
 
     var that = this;
-    var cleanHandlersAndPassThrough = function() {
-        if (!options) {
-            that._handlers = {
-                'registration': [],
-                'notification': [],
-                'error': []
-            };
-        }
-        successCallback();
-    };
+    if (!options) {
+        that._handlers = {
+            'registration': [],
+            'notification': [],
+            'error': []
+        };
+    }
 
-    exec(cleanHandlersAndPassThrough, errorCallback, 'PushNotification', 'unregister', [options]);
+    serviceWorker.unregister().then(function(isSuccess) {
+        if (isSuccess) {
+            var xmlHttp = new XMLHttpRequest();
+            var xmlURL = options.browser.pushServiceURL || 'http://push.api.phongeap.com/v1/push/keys';
+            xmlHttp.open('POST', xmlURL, true);
+
+            xmlHttp.onreadystatechange = function() {
+                if (xmlHttp.readyState === 4 && xmlHttp.status === 200) {
+                    console.log('*** xmlHttp send ok');
+                } else {
+                    console.log('*** xmlHttp send bad');
+                    console.log(xmlHttp.responseText);
+                }
+            };
+
+            var formData = new FormData();
+            formData.append('subscription', JSON.stringify(subscription));
+
+            xmlHttp.send(formData);
+
+            successCallback();
+        } else {
+            errorCallback();
+        }
+    });
 };
 
 /**
@@ -292,6 +315,10 @@ module.exports = {
 
     hasPermission: function(successCallback, errorCallback) {
         exec(successCallback, errorCallback, 'PushNotification', 'hasPermission', []);
+    },
+
+    unregister: function(successCallback, errorCallback, options) {
+        PushNotification.unregister(successCallback, errorCallback, options);
     },
 
     /**
