@@ -32,8 +32,6 @@ var PushNotification = function(options) {
     // triggered on registration and notification
     var that = this;
 
-    console.log('*** push plugin init');
-
     // Add manifest.json to main HTML file
     var linkElement = document.createElement('link');
     linkElement.rel = 'manifest';
@@ -41,13 +39,9 @@ var PushNotification = function(options) {
     document.getElementsByTagName('head')[0].appendChild(linkElement);
 
     if ('serviceWorker' in navigator && 'MessageChannel' in window) {
-        console.log('Service Worker is supported');
-
         var result;
         var channel = new MessageChannel();
         channel.port1.onmessage = function(event) {
-            console.log('*** onmessage: ');
-            console.log(event);
             that.emit('notification', event.data);
         };
 
@@ -55,28 +49,16 @@ var PushNotification = function(options) {
             return navigator.serviceWorker.ready;
         })
         .then(function(reg) {
-            console.log('Service Worker is ready: ');
             serviceWorker = reg;
             reg.pushManager.subscribe({userVisibleOnly: true}).then(function(sub) {
-                console.log(sub.endpoint);
                 subscription = sub;
                 result = { 'registrationId': sub.endpoint.substring(sub.endpoint.lastIndexOf('/') + 1) };
                 that.emit('registration', result);
 
                 // send encryption keys to push server
-                console.log('*** sending XHR');
                 var xmlHttp = new XMLHttpRequest();
                 var xmlURL = options.browser.pushServiceURL || 'http://push.api.phongeap.com/v1/push/keys';
                 xmlHttp.open('POST', xmlURL, true);
-
-                xmlHttp.onreadystatechange = function() {
-                    if (xmlHttp.readyState === 4 && xmlHttp.status === 200) {
-                        console.log('*** xmlHttp send ok');
-                    } else {
-                        console.log('*** xmlHttp send bad');
-                        console.log(xmlHttp.responseText);
-                    }
-                };
 
                 var formData = new FormData();
                 formData.append('subscription', JSON.stringify(sub));
@@ -85,15 +67,19 @@ var PushNotification = function(options) {
 
                 navigator.serviceWorker.controller.postMessage(result, [channel.port2]);
             }).catch(function(error) {
-                console.log('*** subscription error');
-                console.log(error);
+                if (navigator.serviceWorker.controller === null) {
+                    // When you first register a SW, need a page reload to handle network operations
+                    window.location.reload();
+                    return;
+                }
+
+                throw new Error('Error subscribing for Push notifications.');
             });
         }).catch(function(error) {
-            console.log('Service Worker error: ');
-            console.log(error);
+            throw new Error('Error registering Service Worker');
         });
     } else {
-        console.log('Service Worker is not supported');
+        throw new Error('Service Workers are not supported on your browser.');
     }
 };
 
@@ -126,17 +112,8 @@ PushNotification.prototype.unregister = function(successCallback, errorCallback,
     serviceWorker.unregister().then(function(isSuccess) {
         if (isSuccess) {
             var xmlHttp = new XMLHttpRequest();
-            var xmlURL = options.browser.pushServiceURL || 'http://push.api.phongeap.com/v1/push/keys';
+            var xmlURL = (that.options.browser.pushServiceURL || 'http://push.api.phongeap.com/v1/push/keys') + '/remove';
             xmlHttp.open('POST', xmlURL, true);
-
-            xmlHttp.onreadystatechange = function() {
-                if (xmlHttp.readyState === 4 && xmlHttp.status === 200) {
-                    console.log('*** xmlHttp send ok');
-                } else {
-                    console.log('*** xmlHttp send bad');
-                    console.log(xmlHttp.responseText);
-                }
-            };
 
             var formData = new FormData();
             formData.append('subscription', JSON.stringify(subscription));
