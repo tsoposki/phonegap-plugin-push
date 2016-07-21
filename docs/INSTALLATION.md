@@ -8,6 +8,7 @@
 	- [Multidex](#multidex)
 	- [More than one library with package name 'com.google.android.gms'](#more-than-one-library-with-package-name-comgoogleandroidgms)
 - [Browser details](#browser-details)
+  - [Browser quirks](#browser-quirks)
   - [Browser Support](#browser-support)
 - [iOS details](#ios-details)
   - [XCode](#xcode)
@@ -181,7 +182,7 @@ Alternatively, switch to another plugin that provides the same functionality but
 
 ### Browser quirks
 
-For the time being push support on the browser will only work using the phonegap push server.
+For the time being push support on the browser will only work using the PhoneGap push server.
 
 ### Browser Support
 
